@@ -4,7 +4,9 @@
 library(tidyverse)
 library(here)
 library(fs)
-
+################################################################################
+############################### Part 1 #########################################
+################################################################################
 time_data <- tibble(files = fs::dir_ls(here("2022 data")))  %>% #created a list of files to be imported
   mutate(data = pmap(list(files),
                      ~ read_tsv(..1, col_names = FALSE))) %>% #imported the files
@@ -17,7 +19,12 @@ time_data <- tibble(files = fs::dir_ls(here("2022 data")))  %>% #created a list 
   separate(X1, c("time_utc","a","b","c","d","e"), sep = " +") %>% #split one column (character string) at whitespace into multiple columns and assigned column names
   select(time_utc) %>% #deleted all columns except time_utc
   rowid_to_column() #added a column containing row ID
+################################################################################
+## Part 1 works as intended
 
+################################################################################
+############################### Part 2 #########################################
+################################################################################
 bottle_data <- tibble(files = fs::dir_ls(here("2022 data")))  %>% #created a list of files to be imported
   mutate(data = pmap(list(files),
                      ~ read_tsv(..1, col_names = FALSE))) %>% #imported the files
@@ -30,9 +37,10 @@ bottle_data <- tibble(files = fs::dir_ls(here("2022 data")))  %>% #created a lis
   select(filtered_data) %>% #removed everything except filtered_data
   map_df(bind_rows) %>% #joined all tables in filtered_data into one
   mutate(cast = stringr::str_extract(source_file, "(?<=WK22_Ros_)[:digit:]+")) %>% #created a column containing cast number for each row, derived from the file name 
-  separate(X1, c("bottle_position","month","day","year",
-                 "temperature_deg_c","salinity_psu","conductivity_ms_cm",
-                 "pressure_db","type_of_measurement"), sep = " +") %>% #split one column (character string) at whitespace into multiple columns and assigned column names
+  separate(X1, c("bottle_position","month","day","year", "pressure_db", "depth_m",
+                 "temperature_deg_c","conductivity_ms_cm", "salinity_psu",
+                 "density_kg_m3", "specific_volume_(sva)", "oxygen_raw_V", "oxygen_umol_kg",
+                 "oxygen_saturation_%", "spar", "type_of_measurement"), sep = " +") %>% #split one column (character string) at whitespace into multiple columns and assigned column names
   select(-source_file,-type_of_measurement) %>% #deleted columns containing file names and type of measurement (it was "avg" for each row)
   mutate(month = match(month,month.abb)) %>% #changed month from MMM (e.g., AUG) to M (e.g., 8)
   mutate(bottle_position = as.numeric(bottle_position), month = as.numeric(month), 
@@ -41,7 +49,11 @@ bottle_data <- tibble(files = fs::dir_ls(here("2022 data")))  %>% #created a lis
          conductivity_ms_cm = as.numeric(conductivity_ms_cm), 
          pressure_db = as.numeric(pressure_db), cast = as.numeric(cast)) %>% #converted variables from character to numeric 
   rowid_to_column() #added a column containing row ID
+################################################################################
 
+################################################################################
+############################### Part 3 #########################################
+################################################################################
 #! MAKE SURE BOTTLE_DATA AND TIME_DATA HAVE THE SAME NUMBER OF ROWS BEFORE PROCEEDING 
 #! IF THE NUMBER OF ROWS IS NOT THE SAME - THERE IS AN ISSUE.
 bottle_data_with_time <- left_join(bottle_data, time_data, by = "rowid") %>% #joined time data to the rest of bottle data by row ID
